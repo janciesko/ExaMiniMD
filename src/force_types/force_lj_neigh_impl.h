@@ -123,11 +123,11 @@ void ForceLJNeigh<NeighborClass>::compute(System* system, Binning* binning, Neig
   domain_y = system->domain_y;
   domain_z = system->domain_z;
   Kokkos::fence();
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
   Kokkos::parallel_for("ForceLJNeigh::compute_fill_xshmem", Kokkos::RangePolicy<TagCopyLocalXShmem>(0,system->N_local), *this);
   //Kokkos::SHMEMSpace::fence();
   Kokkos::fence();
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace().fence();;
   if (use_stackparams) {
     if(half_neigh)
       Kokkos::parallel_for("ForceLJNeigh::compute", t_policy_half_neigh_stackparams(0, system->N_local), *this);
@@ -140,7 +140,7 @@ void ForceLJNeigh<NeighborClass>::compute(System* system, Binning* binning, Neig
       Kokkos::parallel_for("ForceLJNeigh::compute", t_policy_full_neigh(0, system->N_local), *this);
   }
   Kokkos::fence();
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
   //Kokkos::SHMEMSpace::fence();
 
   //x_shmem = t_x_shmem();
@@ -200,9 +200,8 @@ void ForceLJNeigh<NeighborClass>::operator() (TagFullNeigh<STACKPARAMS>, const T
   for(int jj = 0; jj < num_neighs; jj++) {
     T_INT j = neighs_i(jj);
     //printf("Neigh: %i %i %li %li %i\n",i,j,global_index(i),global_index(j),j>N_local?1:0);
-    //const T_F_FLOAT dx = x_i - x(j,0);
-    //const T_F_FLOAT dy = y_i - x(j,1);
-    //const T_F_FLOAT dz = z_i - x(j,2);
+
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 
     const T_INDEX jg = global_index(j);
     #ifdef SHMEMTESTS_USE_SCALAR
@@ -234,6 +233,7 @@ void ForceLJNeigh<NeighborClass>::operator() (TagFullNeigh<STACKPARAMS>, const T
     const T_X_FLOAT zj_shmem = posj_shmem.z;
     #endif
     #endif
+
     //printf("DATA: %i %i %i %lf %lf %lf %i %li %i\n",id(i),jj,(int)jg,xj_shmem,yj_shmem,zj_shmem,(int)jg/N_MAX_MASK,N_MAX_MASK,int(jg%N_MAX_MASK));
     T_F_FLOAT dx = abs(x_i - xj_shmem)>domain_x/2?
                             (x_i-xj_shmem<0?x_i-xj_shmem+domain_x:x_i-xj_shmem-domain_x)
@@ -244,7 +244,12 @@ void ForceLJNeigh<NeighborClass>::operator() (TagFullNeigh<STACKPARAMS>, const T
     T_F_FLOAT dz = abs(z_i - zj_shmem)>domain_z/2?
                             (z_i-zj_shmem<0?z_i-zj_shmem+domain_z:z_i-zj_shmem-domain_z)
                            :z_i-zj_shmem;
-    
+    #else //EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+    const T_F_FLOAT dx = x_i - x(j,0);
+    const T_F_FLOAT dy = y_i - x(j,1);
+    const T_F_FLOAT dz = z_i - x(j,2);
+    #endif
+
 //    if((abs(dx_shmem-dx)>1e-10) || (abs(dy_shmem-dy)>1e-10) || (abs(dz_shmem-dz)>1e-10))
 //      printf("Neigh: %i %i %li %li %i : %lf %lf %lf %lf %lf\n",i,j,global_index(i),global_index(j),j>N_local?1:0,x(j,0),xj_shmem,domain_x,dx,dx_shmem);
     const int type_j = type(j);

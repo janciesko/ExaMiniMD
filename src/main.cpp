@@ -44,40 +44,28 @@
 #ifdef EXAMINIMD_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 #include <Kokkos_RemoteSpaces.hpp>
+#endif
 
 int main(int argc, char* argv[]) {
-
-   #ifdef EXAMINIMD_ENABLE_MPI
-   MPI_Init(&argc,&argv);
-   #ifdef KOKKOS_ENABLE_NVSHMEMSPACE
-   shmemx_init_attr_t attr;
-   auto mpi_comm = MPI_COMM_WORLD;
-   attr.mpi_comm = &mpi_comm;
-   shmemx_init_attr (SHMEMX_INIT_WITH_MPI_COMM, &attr);
-   #endif
-   #ifdef KOKKOS_ENABLE_SHMEMSPACE
-   shmem_init();
-   #endif
+   #if defined (EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
+   comm_lib_init(argc,argv);
    #endif
 
    Kokkos::initialize(argc,argv);
 
    ExaMiniMD examinimd;
    examinimd.init(argc,argv);
-  
    examinimd.run(examinimd.input->nsteps);
-
-   //   examinimd.check_correctness();
-
+   // examinimd.check_correctness();
    examinimd.print_performance();
-
    examinimd.shutdown();
 
    Kokkos::finalize();
 
-   #ifdef EXAMINIMD_ENABLE_MPI
-   //MPI_Finalize();
+   #if defined (EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
+   comm_lib_finalize();
    #endif
 }
-

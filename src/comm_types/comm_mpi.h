@@ -52,7 +52,7 @@
 #define COMM_MPI_H
 #include<comm.h>
 
-#ifndef EXAMINIMD_ENABLE_MPI
+#if !defined(EXAMINIMD_ENABLE_MPI) && !defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
 #error "Trying to compile CommMPI without MPI"
 #endif
 

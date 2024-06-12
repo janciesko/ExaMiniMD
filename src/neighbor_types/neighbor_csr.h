@@ -145,8 +145,6 @@ protected:
   typename Binning::t_bincount bin_count;
   typename Binning::t_permute_vector permute_vector;
 
-
-
 public:
   struct TagCreateOffsets {};
   struct TagCountNeighsFull {};

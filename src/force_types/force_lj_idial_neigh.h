@@ -39,9 +39,8 @@
 #ifdef MODULES_OPTION_CHECK
       if( (strcmp(argv[i+1], "NEIGH_FULL") == 0) )
         force_iteration_type = FORCE_ITER_NEIGH_FULL;
-      if( (strcmp(argv[i+1], "NEIGH_HALF") == 0) ) {
+      if( (strcmp(argv[i+1], "NEIGH_HALF") == 0) )
         force_iteration_type = FORCE_ITER_NEIGH_HALF;
-      }
 #endif
 #ifdef FORCE_MODULES_INSTANTIATION
     else if (input->force_type == FORCE_LJ_IDIAL) {
@@ -53,7 +52,6 @@
       }
     }
 #endif
-
 
 #if !defined(MODULES_OPTION_CHECK) && \
     !defined(FORCE_MODULES_INSTANTIATION)

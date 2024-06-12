@@ -183,6 +183,9 @@ public:
   struct TagForceCompute {};
   KOKKOS_INLINE_FUNCTION
   void operator() (TagForceCompute, const Kokkos::TeamPolicy<>::member_type& team) const;
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const Kokkos::TeamPolicy<>::member_type& team) const;
+
 
   struct TagCopyLocalXShmem {};
   KOKKOS_INLINE_FUNCTION

@@ -1,28 +1,32 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 project(ExaMiniMD LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
-find_package(Kokkos 3.0 REQUIRED)
-option(USE_MPI "Build with MPI" ON)
+find_package(Kokkos REQUIRED)
 
-if (USE_MPI)
+option(ENABLE_MPI "Whether to build with MPI" OFF)
+option(ENABLE_KOKKOS_REMOTE_SPACES "Whether to build with Kokkos Remote Spaces" ON)
+
+if (ENABLE_MPI)
   find_package(MPI REQUIRED CXX)
-else()
-  kokkos_check(DEVICES Cuda RETURN_VALUE USE_CUDA)
-  if (USING_CUDA)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "nvcc")
-      enable_language(CUDA)
-    else()
-      message(FATAL_ERROR "Kokkos uses CUDA but compiler is not nvcc")
-    endif()
-  endif()
+  message(STATUS "Building with MPI support")
+  set(BACKEND_NAME MPI)
+  list(APPEND BACKENDS ${BACKEND_NAME})
 endif()
 
-# force target_source to resolve relative paths immediately
-if(POLICY CMP0076)
-  cmake_policy(SET CMP0076 NEW)
+if (ENABLE_KOKKOS_REMOTE_SPACES)
+  find_package(MPI REQUIRED CXX)
+  find_package(KokkosRemoteSpaces REQUIRED)
+  message(STATUS "Building with Kokkos Remote Spaces support")
+  set(BACKEND_NAME KokkosRemoteSpaces)
+  list(APPEND BACKENDS ${BACKEND_NAME})
+endif()
+
+list(LENGTH BACKENDS N_BACKENDS)
+if (${N_BACKENDS} GREATER_EQUAL "2")
+  message(FATAL_ERROR "Must specify a single valid communiction implementation. ${N_BACKENDS} given.")
 endif()
 
 add_subdirectory(src)

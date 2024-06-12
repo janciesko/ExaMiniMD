@@ -189,11 +189,11 @@ void ForceSNAP<NeighborClass>::compute(System* system, Binning* binning, Neighbo
     if(max_neighs<num_neighs) max_neighs = num_neighs;
   }*/
 
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
   Kokkos::parallel_for("ForceSNAPNeigh::compute_fill_xshmem", Kokkos::RangePolicy<TagCopyLocalXShmem>(0,system->N_local), *this);
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
 
-  Kokkos::parallel_reduce("ForceSNAP::find_max_neighs",nlocal, FindMaxNumNeighs<t_neigh_list>(neigh_list), Kokkos::Experimental::Max<int>(max_neighs));
+  Kokkos::parallel_reduce("ForceSNAP::find_max_neighs",nlocal, FindMaxNumNeighs<t_neigh_list>(neigh_list), Kokkos::Max<int>(max_neighs));
 
   sna.nmax = max_neighs;
 
@@ -201,7 +201,6 @@ void ForceSNAP<NeighborClass>::compute(System* system, Binning* binning, Neighbo
   T_INT thread_scratch_size = sna.size_thread_scratch_arrays();
 
   //printf("Sizes: %i %i\n",team_scratch_size/1024,thread_scratch_size/1024);
-  int team_size_max = Kokkos::TeamPolicy<TagForceCompute>::team_size_max(*this);
   int vector_length = 8;
   int team_size_max = Kokkos::TeamPolicy<>(nlocal,Kokkos::AUTO).team_size_max(*this,Kokkos::ParallelForTag());
 #ifdef EMD_ENABLE_GPU
@@ -218,7 +217,7 @@ void ForceSNAP<NeighborClass>::compute(System* system, Binning* binning, Neighbo
       .set_scratch_size(1,Kokkos::PerTeam(team_scratch_size))
     ,*this);
   Kokkos::fence();
-  Kokkos::DefaultRemoteMemorySpace().fence();;
+  Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
 //static int step =0;
 //step++;
 //if(step%10==0)
@@ -606,6 +605,11 @@ void ForceSNAP<NeighborClass>::read_files(char *coefffilename, char *paramfilena
 
 template<class NeighborClass>
 KOKKOS_INLINE_FUNCTION
+void ForceSNAP<NeighborClass>::operator() (const Kokkos::TeamPolicy<>::member_type& team) const {
+}
+
+template<class NeighborClass>
+KOKKOS_INLINE_FUNCTION
 void ForceSNAP<NeighborClass>::operator() (TagForceCompute, const Kokkos::TeamPolicy<>::member_type& team) const {
   const int i = team.league_rank();
   SNA my_sna(sna,team);
@@ -631,6 +635,9 @@ void ForceSNAP<NeighborClass>::operator() (TagForceCompute, const Kokkos::TeamPo
   Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,num_neighs),
       [&] (const int jj, int& count) {
     Kokkos::single(Kokkos::PerThread(team), [&] (){
+
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+
       T_INT j = neighs_i(jj);
     const T_INDEX jg = global_index(j);
     #ifdef SHMEMTESTS_USE_SCALAR
@@ -672,9 +679,15 @@ void ForceSNAP<NeighborClass>::operator() (TagForceCompute, const Kokkos::TeamPo
     T_F_FLOAT dz = -(abs(z_i - zj_shmem)>domain_z/2?
                            (z_i-zj_shmem<0?z_i-zj_shmem+domain_z:z_i-zj_shmem-domain_z)
                            :z_i-zj_shmem);
-      //const T_F_FLOAT dx = xj_shmem - x_i;
-      //const T_F_FLOAT dy = yj_shmem - y_i;
-      //const T_F_FLOAT dz = zj_shmem - z_i;
+
+    #else //EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+
+      const T_F_FLOAT dx = xj_shmem - x_i;
+      const T_F_FLOAT dy = yj_shmem - y_i;
+      const T_F_FLOAT dz = zj_shmem - z_i;
+
+    #endif
+
 
       const int type_j = type(j);
       const T_F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
@@ -690,9 +703,12 @@ void ForceSNAP<NeighborClass>::operator() (TagForceCompute, const Kokkos::TeamPo
   if(team.team_rank() == 0)
   Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,num_neighs),
       [&] (const int jj, int& offset, bool final){
-  //for (int jj = 0; jj < num_neighs; jj++) {
+    //for (int jj = 0; jj < num_neighs; jj++) {
     T_INT j = neighs_i(jj);
     const T_INDEX jg = global_index(j);
+
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+
     #ifdef SHMEMTESTS_USE_SCALAR
     #ifdef SHMEMTESTS_USE_HALO
     const T_X_FLOAT xj_shmem = x(j,0);//x_shmem(jg/N_MAX_MASK,jg%N_MAX_MASK,0);
@@ -731,9 +747,12 @@ void ForceSNAP<NeighborClass>::operator() (TagForceCompute, const Kokkos::TeamPo
     T_F_FLOAT dz = -(abs(z_i - zj_shmem)>domain_z/2?
                            (z_i-zj_shmem<0?z_i-zj_shmem+domain_z:z_i-zj_shmem-domain_z)
                            :z_i-zj_shmem);
-    //const T_F_FLOAT dx = xj_shmem - x_i;
-    //const T_F_FLOAT dy = yj_shmem - y_i;
-    //const T_F_FLOAT dz = zj_shmem - z_i;
+
+    #else //EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+    const T_F_FLOAT dx = xj_shmem - x_i;
+    const T_F_FLOAT dy = yj_shmem - y_i;
+    const T_F_FLOAT dz = zj_shmem - z_i;
+    #endif
 
     const int type_j = type(j);
     const T_F_FLOAT rsq = dx*dx + dy*dy + dz*dz;

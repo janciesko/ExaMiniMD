@@ -152,7 +152,6 @@ public:
 
   t_neigh_list neigh_list;
 
-
   Neighbor2D():neigh_cut(0.0) {
     neigh_type = NEIGH_2D;
 
@@ -244,7 +243,7 @@ public:
              (by_j>=nhalo) && (by_j<nbiny+nhalo-1) &&
              (bz_j>=nhalo) && (bz_j<nbinz+nhalo-1)    
            ) continue;
-*/
+        */
          const T_INT j_offset = bin_offsets(bx_j,by_j,bz_j);
            Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, bin_count(bx_j,by_j,bz_j)), [&] (const T_INT bj) {
              T_INT j = permute_vector(j_offset + bj);
@@ -302,11 +301,9 @@ public:
     permute_vector = binning->permute_vector;
 
     do {
-
       // Resize NeighborList
       if( neigh_list.neighs.extent(0) < N_local + 1 || neigh_list.neighs.extent(1) < neigh_list.maxneighs )
         neigh_list.neighs = Kokkos::View<T_INT**, MemorySpace> ("Neighbor2D::neighs", N_local + 1, neigh_list.maxneighs);
-
 
       // Fill the NeighborList
       Kokkos::deep_copy(neigh_list.num_neighs,0);
@@ -316,7 +313,6 @@ public:
         Kokkos::parallel_for("Neighbor2D::fill_neigh_list_half",t_policy_fnlh(nbins,Kokkos::AUTO,8),*this);
       else
         Kokkos::parallel_for("Neighbor2D::fill_neigh_list_full",t_policy_fnlf(nbins,Kokkos::AUTO,8),*this);
-
 
       Kokkos::fence();
 

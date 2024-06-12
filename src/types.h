@@ -38,8 +38,12 @@
 
 #ifndef TYPES_H
 #define TYPES_H
+
 #include<Kokkos_Core.hpp>
+
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 #include<Kokkos_RemoteSpaces.hpp>
+#endif
 
 // Module Types etc
 // Units to be used
@@ -97,10 +101,10 @@ typedef Kokkos::View<const T_X_FLOAT*[3],Kokkos::LayoutRight> t_x_const;    // P
 typedef Kokkos::View<const T_X_FLOAT*[3],Kokkos::LayoutRight,
     Kokkos::MemoryTraits<Kokkos::RandomAccess>> t_x_const_rnd;    // Positions
 #ifdef SHMEMTESTS_USE_SCALAR
-typedef Kokkos::View<T_X_FLOAT**[3],Kokkos::LayoutRight,Kokkos::DefaultRemoteMemorySpace> t_x_shmem; // PGAS Positions
+typedef Kokkos::View<T_X_FLOAT**[3],Kokkos::PartitionedLayoutRight,Kokkos::Experimental::DefaultRemoteMemorySpace> t_x_shmem; // PGAS Positions
 typedef Kokkos::View<T_X_FLOAT*[3],Kokkos::LayoutRight> t_x_shmem_local; // Local PGAS Positions
 #else
-typedef Kokkos::View<double3**,Kokkos::LayoutRight,Kokkos::DefaultRemoteMemorySpace> t_x_shmem; // PGAS Positions
+typedef Kokkos::View<double3**,Kokkos::PartitionedLayoutRight,Kokkos::Experimental::DefaultRemoteMemorySpace> t_x_shmem; // PGAS Positions
 typedef Kokkos::View<double3*,Kokkos::LayoutRight> t_x_shmem_local; // Local PGAS Positions
 #endif
 typedef Kokkos::View<T_V_FLOAT*[3]>       t_v;          // Velocities

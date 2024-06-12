@@ -124,7 +124,7 @@ Input::Input(System* p):system(p),input_data(ItemizedFile()),integrator_type(INT
   input_file_type = -1;
 
 
-#ifdef EXAMINIMD_ENABLE_MPI
+#if defined(EXAMINIMD_ENABLE_MPI) && defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
   comm_type = COMM_MPI;
 #else
   comm_type = COMM_SERIAL;

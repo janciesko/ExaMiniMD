@@ -37,9 +37,11 @@
 //************************************************************************
 
 #include<system.h>
+
 #ifdef EXAMINIMD_ENABLE_MPI
 #include<mpi.h>
 #endif
+
 System::System() {
   N = 0;
   N_max = 0;
@@ -59,7 +61,7 @@ System::System() {
   sub_domain_hi_x = sub_domain_hi_y = sub_domain_hi_z = 0.0;
   sub_domain_lo_x = sub_domain_lo_y = sub_domain_lo_z = 0.0;
   mvv2e = boltz = dt = 0.0;
-#ifdef EXAMINIMD_ENABLE_MPI
+#if defined(EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
   int proc_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
   do_print = proc_rank == 0;
@@ -102,27 +104,16 @@ void System::grow(T_INT N_new) {
     Kokkos::resize(x,N_max);      // Positions
     Kokkos::resize(v,N_max);      // Velocities
     Kokkos::resize(f,N_max);      // Forces
-
     Kokkos::resize(id,N_max);     // Id
     Kokkos::resize(global_index,N_max);     // Id
-
     Kokkos::resize(type,N_max);   // Particle Type
-
     Kokkos::resize(q,N_max);      // Charge
-{
-#ifdef EXAMINIMD_ENABLE_MPI
-  int num_ranks;
-  MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
-#else
-  int num_ranks = 1;
-#endif
-    int* rank_list = new int[num_ranks];
-    for(int i=0; i<num_ranks; i++)
-      rank_list[i] = i;
-    Kokkos::DefaultRemoteMemorySpace space;
-    x_shmem = Kokkos::allocate_symmetric_remote_view<t_x_shmem>("X_shmem",num_ranks,rank_list,N_max); 
-}
 
+    #ifdef EXAMINIMD_ENABLE_USE_KOKKOS_REMOTE_SPACES
+    int num_ranks;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+    x_shmem = t_x_shmem("X_shmem", num_ranks, N_max);
+    #endif
   }
 }
 
