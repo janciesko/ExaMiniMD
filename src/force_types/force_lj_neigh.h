@@ -67,8 +67,11 @@ class ForceLJNeigh: public Force {
 private:
   int N_local,ntypes;
   t_x_const_rnd x;
+
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   t_x_shmem x_shmem;
   t_x_shmem_local x_shmem_local;
+  #endif
   t_f f;
   t_f_atomic f_a;
   t_id id;

@@ -56,7 +56,9 @@
 #error "Trying to compile CommMPI without MPI"
 #endif
 
+#ifdef EXAMINIMD_ENABLE_MPI
 #include "mpi.h"
+#endif
 
 class CommMPI: public Comm {
 

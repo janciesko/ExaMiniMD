@@ -170,8 +170,10 @@ protected:
 
 
   t_x x;
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   t_x_shmem x_shmem;
   t_x_shmem_local x_shmem_local;
+  #endif
   t_f_atomic f;
   t_type type;
   t_index global_index;

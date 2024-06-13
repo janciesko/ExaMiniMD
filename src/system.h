@@ -76,7 +76,9 @@ public:
   
   t_q q;         // Charge
 
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   t_x_shmem x_shmem; 
+  #endif
 
   // Per Type Property
   t_mass mass;

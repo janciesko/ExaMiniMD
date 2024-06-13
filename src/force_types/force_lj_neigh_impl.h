@@ -38,6 +38,10 @@
 
 #include<force_lj_neigh.h>
 
+#ifdef EXAMINIMD_ENABLE_MPI
+#include <mpi.h>
+#endif
+
 template<class NeighborClass>
 ForceLJNeigh<NeighborClass>::ForceLJNeigh(char** args, System* system, bool half_neigh_):Force(args,system,half_neigh_) {
   ntypes = system->ntypes;
@@ -51,7 +55,11 @@ ForceLJNeigh<NeighborClass>::ForceLJNeigh(char** args, System* system, bool half
   N_local = 0;
   nhalo = 0;
   step = 0;
+  #if defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES) || defined (EXAMINIMD_ENABLE_MPI)
   MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+  #else
+  proc_rank=0;
+  #endif
 }
 
 template<class NeighborClass>
@@ -106,13 +114,11 @@ void ForceLJNeigh<NeighborClass>::compute(System* system, Binning* binning, Neig
 
   N_local = system->N_local;
   x = system->x;
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   x_shmem = system->x_shmem;
-
-#ifdef KOKKOS_ENABLE_QUOSPACE
-  x_shmem_local = t_x_shmem_local(&x_shmem.access(proc_rank,0,0),x_shmem.extent(1));
-#else
   x_shmem_local = t_x_shmem_local(x_shmem.data(),x_shmem.extent(1));
-#endif
+  #endif
+
   f = system->f;
   f_a = system->f;
   type = system->type;
@@ -122,12 +128,13 @@ void ForceLJNeigh<NeighborClass>::compute(System* system, Binning* binning, Neig
   domain_x = system->domain_x;
   domain_y = system->domain_y;
   domain_z = system->domain_z;
-  Kokkos::fence();
+  
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
   Kokkos::parallel_for("ForceLJNeigh::compute_fill_xshmem", Kokkos::RangePolicy<TagCopyLocalXShmem>(0,system->N_local), *this);
-  //Kokkos::SHMEMSpace::fence();
   Kokkos::fence();
   Kokkos::Experimental::DefaultRemoteMemorySpace().fence();;
+  #endif
   if (use_stackparams) {
     if(half_neigh)
       Kokkos::parallel_for("ForceLJNeigh::compute", t_policy_half_neigh_stackparams(0, system->N_local), *this);
@@ -140,9 +147,9 @@ void ForceLJNeigh<NeighborClass>::compute(System* system, Binning* binning, Neig
       Kokkos::parallel_for("ForceLJNeigh::compute", t_policy_full_neigh(0, system->N_local), *this);
   }
   Kokkos::fence();
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   Kokkos::Experimental::DefaultRemoteMemorySpace::fence();;
-  //Kokkos::SHMEMSpace::fence();
-
+  #endif
   //x_shmem = t_x_shmem();
   step++;
 }
@@ -152,7 +159,9 @@ T_V_FLOAT ForceLJNeigh<NeighborClass>::compute_energy(System* system, Binning* b
   // Set internal data handles
   NeighborClass* neighbor = (NeighborClass*) neighbor_;
   neigh_list = neighbor->get_neigh_list();
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+  #endif
   N_local = system->N_local;
   x = system->x;
   f = system->f;
@@ -417,6 +426,7 @@ template<class NeighborClass>
 KOKKOS_INLINE_FUNCTION
 void ForceLJNeigh<NeighborClass>::operator() (TagCopyLocalXShmem, const T_INT& i) const {
   //printf("CopyLocal: %i %lf %lf %lf\n",i,x(i,0),x(i,1),x(i,2));
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   #ifdef SHMEMTESTS_USE_SCALAR
   x_shmem_local(i,0) = x(i,0);
   x_shmem_local(i,1) = x(i,1);
@@ -425,5 +435,6 @@ void ForceLJNeigh<NeighborClass>::operator() (TagCopyLocalXShmem, const T_INT& i
   double3 pos = {x(i,0),x(i,1),x(i,2)};
   x_shmem_local(i) = pos;
   #endif
+  #endif //EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 }
 

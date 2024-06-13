@@ -38,5 +38,8 @@
 
 // Include Module header files for comm
 
-#include <comm_mpi.h>
+#if !defined(EXAMINIMD_ENABLE_MPI) && !defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES) 
 #include <comm_serial.h>
+#else 
+#include <comm_mpi.h>
+#endif
