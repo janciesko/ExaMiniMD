@@ -36,10 +36,53 @@
 //  Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //************************************************************************
 
-#include <neighbor_2d.h>
+#include <comm_lib.h>
+#include <assert.h>
 
-#ifdef EXAMINIMD_HAS_GPU
-template struct Neighbor2D<t_neigh_mem_space>;
+#if EXAMINIMD_ENABLE_MPI
+#include <mpi.h>
 #endif
-template struct Neighbor2D<Kokkos::HostSpace>;
 
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+#include <Kokkos_RemoteSpaces.hpp>
+#endif
+
+void comm_lib_init(int argc, char* argv[]) {
+#if defined (EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
+  int mpi_thread_level_available;
+  int mpi_thread_level_required = MPI_THREAD_MULTIPLE;
+
+#ifdef KOKKOS_ENABLE_DEFAULT_DEVICE_TYPE_SERIAL
+  mpi_thread_level_required = MPI_THREAD_SINGLE;
+#endif
+
+  MPI_Init_thread(&argc, &argv, mpi_thread_level_required,
+                  &mpi_thread_level_available);
+  assert(mpi_thread_level_available >= mpi_thread_level_required);
+
+#ifdef KRS_ENABLE_SHMEMSPACE
+  shmem_init_thread(mpi_thread_level_required, &mpi_thread_level_available);
+  assert(mpi_thread_level_available >= mpi_thread_level_required);
+#endif
+
+#ifdef KRS_ENABLE_NVSHMEMSPACE
+  MPI_Comm mpi_comm;
+  nvshmemx_init_attr_t attr;
+  mpi_comm      = MPI_COMM_WORLD;
+  attr.mpi_comm = &mpi_comm;
+  nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
+#endif
+}
+
+void comm_lib_finalize() {
+#if defined (EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
+#ifdef KRS_ENABLE_SHMEMSPACE
+  shmem_finalize();
+#endif
+#ifdef KRS_ENABLE_NVSHMEMSPACE
+  nvshmem_finalize();
+#endif
+  MPI_Finalize();
+#endif
+#endif
+}

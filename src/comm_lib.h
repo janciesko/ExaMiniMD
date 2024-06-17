@@ -36,10 +36,12 @@
 //  Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //************************************************************************
 
-#include <neighbor_2d.h>
+#pragma once
 
-#ifdef EXAMINIMD_HAS_GPU
-template struct Neighbor2D<t_neigh_mem_space>;
+#ifndef COMM_INIT_H
+#define COMM_INIT_H
+
+void comm_lib_init(int argc, char* argv[]);
+void comm_lib_finalize();
+
 #endif
-template struct Neighbor2D<Kokkos::HostSpace>;
-

@@ -65,7 +65,9 @@ enum {NEIGH_NONE, NEIGH_CSR, NEIGH_CSR_MAPCONSTR, NEIGH_2D};
 // Input File Type
 enum {INPUT_LAMMPS};
 
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 enum INDEX_TYPE: int64_t { N_MAX_MASK = 1024*1024*1024 };
+#endif 
 
 // Macros to work around the fact that std::max/min is not available on GPUs
 #define MAX(a,b) (a>b?a:b)
@@ -126,8 +128,10 @@ typedef Kokkos::View<const int*,
     Kokkos::MemoryTraits<Kokkos::RandomAccess>> t_type_const_rnd; // Type (int is enough as type)
 typedef Kokkos::View<T_INT*>              t_id;         // ID
 typedef Kokkos::View<const T_INT*>        t_id_const;   // ID
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
 typedef Kokkos::View<T_INDEX*>            t_index;         // ID
 typedef Kokkos::View<const T_INDEX*>      t_index_const;   // ID
+#endif
 typedef Kokkos::View<T_FLOAT*>            t_q;          // Charge
 typedef Kokkos::View<const T_FLOAT*>      t_q_const;    // Charge
 
@@ -202,7 +206,7 @@ t_scalar3<Scalar> operator *
 }
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_OPENMPTARGET) || defined(KOKKOS_ENABLE_SYCL)
-#define EMD_ENABLE_GPU
+#define EXAMINIMD_HAS_GPU
 #endif
 
 #endif

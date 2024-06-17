@@ -71,7 +71,7 @@ namespace {
 void BinningKKSort::create_binning(T_X_FLOAT dx_in, T_X_FLOAT dy_in, T_X_FLOAT dz_in, int halo_depth, bool do_local, bool do_ghost, bool sort) {
   if(do_local||do_ghost) {
     nhalo = halo_depth;
-    std::pair<T_INT,T_INT> range(do_local?0:system->N_local,
+    Kokkos::pair<T_INT,T_INT> range(do_local?0:system->N_local,
                                  do_ghost?system->N_local+system->N_ghost:system->N_local);
 
     nbinx = T_INT(system->sub_domain_x/dx_in);

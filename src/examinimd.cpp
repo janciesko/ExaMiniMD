@@ -83,8 +83,6 @@ void ExaMiniMD::init(int argc, char* argv[]) {
 #undef FORCE_MODULES_INSTANTIATION
   else comm->error("Invalid ForceType");
   for(int line = 0; line < input->force_coeff_lines.extent(0); line++) {
-    //input->input_data.print_line(input->force_coeff_lines(line));
-    //printf("init_coeff: %i %i\n",line,input->input_data.words_in_line(input->force_coeff_lines(line)));
     force->init_coeff(input->input_data.words_in_line(input->force_coeff_lines(line)),
                       input->input_data.words[input->force_coeff_lines(line)]);
   }
@@ -108,7 +106,6 @@ void ExaMiniMD::init(int argc, char* argv[]) {
   if(neighbor)
     neighbor->comm_newton = input->comm_newton;
 
-  // system->print_particles();
   if(system->do_print) {
     printf("Using: %s %s %s %s\n",force->name(),neighbor->name(),comm->name(),binning->name());
   }
@@ -160,7 +157,7 @@ void ExaMiniMD::init(int argc, char* argv[]) {
       } else {
         printf("\n");
         printf("Step Temp E_pair TotEng CPU\n");
-        printf("     %i %lf %lf %lf %lf\n",step,T,PE,PE+KE,0.0);
+        printf("%i %lf %lf %lf %lf\n",step,T,PE,PE+KE,0.0);
       }
     }
   }
@@ -170,7 +167,6 @@ void ExaMiniMD::init(int argc, char* argv[]) {
 
   if(input->correctnessflag)
     check_correctness(step);
-
 }
 
 void ExaMiniMD::run(int nsteps) {
@@ -190,7 +186,6 @@ void ExaMiniMD::run(int nsteps) {
 
   // Timestep Loop
   for(int step = 1; step <= nsteps; step++ ) {
-
     // Do first part of the verlet time step integration
     other_timer.reset();
     integrator->initial_integrate();
@@ -221,11 +216,12 @@ void ExaMiniMD::run(int nsteps) {
         neighbor->create_neigh_list(system,binning,force->half_neigh,false);
       neigh_time += neigh_timer.seconds();
     } else {
-      // Exchange Halo
+      // Exchange Halo data
       comm_timer.reset();
       comm->update_halo();
       comm_time += comm_timer.seconds();
     }
+    Kokkos::Experimental::DefaultRemoteMemorySpace::fence();
 
     // Zero out forces
     force_timer.reset();
@@ -260,7 +256,7 @@ void ExaMiniMD::run(int nsteps) {
           last_time = time;
         } else {
           double time = timer.seconds();
-          printf("     %i %lf %lf %lf %lf\n",step, T, PE, PE+KE, timer.seconds());
+          printf("%i %lf %lf %lf %lf\n",step, T, PE, PE+KE, timer.seconds());
           last_time = time;
         }
       }

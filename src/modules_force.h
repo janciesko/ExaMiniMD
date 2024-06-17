@@ -38,10 +38,15 @@
 
 // Include Module header files for force
 #include<Kokkos_Macros.hpp>
+#ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+#include <force_lj_neigh_distrib.h>
+#else
 #include <force_lj_neigh.h>
+#endif
+#include <force_lj_idial_neigh.h>
+#include <force_lj_cell.h>
 
-//#include <force_lj_cell.h>
-//#include <force_lj_idial_neigh.h>
+// SNAP is outdated and likely subject to removal 
 //#ifndef KOKKOS_ENABLE_OPENMPTARGET
 //#include <force_snap_neigh.h>
 //#endif

@@ -36,10 +36,8 @@
 //  Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //************************************************************************
 
-#include <neighbor_2d.h>
-
-#ifdef EXAMINIMD_HAS_GPU
-template struct Neighbor2D<t_neigh_mem_space>;
-#endif
-template struct Neighbor2D<Kokkos::HostSpace>;
-
+#include<force_lj_neigh_distrib_impl.h>
+#define FORCETYPE_DECLARE_TEMPLATE_MACRO(NeighType) ForceLJNeigh<NeighType>
+#define FORCE_MODULES_TEMPLATE
+#include<modules_neighbor.h>
+#undef FORCE_MODULES_TEMPLATE

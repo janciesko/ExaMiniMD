@@ -15,14 +15,6 @@ if(ENABLE_MPI)
    target_compile_definitions(ExaMiniMD PRIVATE EXAMINIMD_ENABLE_MPI)
 endif()
 
-# Select a default set of options. We can export this as CMake options later
-if (ENABLE_KOKKOS_REMOTE_SPACES)
-  target_compile_definitions(ExaMiniMD PRIVATE EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
-  target_compile_definitions(ExaMiniMD PRIVATE SHMEMTESTS_USE_SCALAR)
-  #target_compile_definitions(ExaMiniMD PRIVATE SHMEMTESTS_USE_HALO)
-  target_compile_definitions(ExaMiniMD PRIVATE SHMEMTESTS_USE_GLOBAL)
-endif()
-
 target_include_directories(ExaMiniMD PRIVATE ${Kokkos_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SUBDIRECTORIES})
 target_link_libraries(ExaMiniMD PRIVATE $<$<BOOL:${ENABLE_MPI}>:MPI::MPI_CXX> Kokkos::kokkos $<$<BOOL:${ENABLE_KOKKOS_REMOTE_SPACES}>:Kokkos::kokkosremotespaces>)
 

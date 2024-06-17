@@ -52,7 +52,6 @@
       }
 #endif
 
-
 #if !defined(MODULES_OPTION_CHECK) && !defined(COMM_MODULES_INSTANTIATION)
 #ifndef COMM_SERIAL_H
 #define COMM_SERIAL_H

@@ -52,7 +52,9 @@ System::System() {
   v = t_v();
   f = t_f();
   id = t_id();
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   global_index = t_index();
+  #endif
   type = t_type();
   q = t_q();
   mass = t_mass();
@@ -61,7 +63,7 @@ System::System() {
   sub_domain_hi_x = sub_domain_hi_y = sub_domain_hi_z = 0.0;
   sub_domain_lo_x = sub_domain_lo_y = sub_domain_lo_z = 0.0;
   mvv2e = boltz = dt = 0.0;
-#if defined(EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
+  #if defined (EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
   int proc_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
   do_print = proc_rank == 0;
@@ -76,7 +78,9 @@ void System::init() {
   v = t_v("System::v",N_max);
   f = t_f("System::f",N_max);
   id = t_id("System::id",N_max);
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   global_index = t_index("System::global_index",N_max);
+  #endif
   type = t_type("System::type",N_max);
   q = t_q("System::q",N_max);
   mass = t_mass("System::mass",ntypes);
@@ -91,7 +95,9 @@ void System::destroy() {
   v = t_v();
   f = t_f();
   id = t_id();
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
   global_index = t_index();
+  #endif
   type = t_type();
   q = t_q();
   mass = t_mass();
@@ -105,16 +111,32 @@ void System::grow(T_INT N_new) {
     Kokkos::resize(v,N_max);      // Velocities
     Kokkos::resize(f,N_max);      // Forces
     Kokkos::resize(id,N_max);     // Id
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     Kokkos::resize(global_index,N_max);     // Id
+    #endif
     Kokkos::resize(type,N_max);   // Particle Type
     Kokkos::resize(q,N_max);      // Charge
 
-    #ifdef EXAMINIMD_ENABLE_USE_KOKKOS_REMOTE_SPACES
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     int num_ranks;
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
-    x_shmem = t_x_shmem("X_shmem", num_ranks, N_max);
+    x_shmem = t_x_shmem("X_shmem", num_ranks, N_max); // Positions (distrib)
     #endif
   }
+}
+
+void System::print_particles_from_device_data()
+{
+  printf("Print all particles (GPU): \n");
+  printf("  Owned: %d\n",N_local);
+  Kokkos::parallel_for("print_particles_2", N_local, KOKKOS_LAMBDA(int i){
+  printf("    %d %lf %lf %lf | %lf %lf %lf | %lf %lf %lf | %d %e\n",i,
+        double(x(i,0)),double(x(i,1)),double(x(i,2)),
+        double(v(i,0)),double(v(i,1)),double(v(i,2)),
+        double(f(i,0)),double(f(i,1)),double(f(i,2)),
+        type(i),q(i));
+    });
+  Kokkos::fence();
 }
 
 void System::print_particles() {

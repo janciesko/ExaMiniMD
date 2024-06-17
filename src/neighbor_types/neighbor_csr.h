@@ -427,7 +427,7 @@ public:
 
     // Create actual CSR NeighList
     neigh_list = t_neigh_list(
-        Kokkos::View<T_INT*, MemorySpace>( neighs,     Kokkos::pair<T_INT,T_INT>(0,total_num_neighs)),
+        Kokkos::View<T_INT*, MemorySpace>( neighs, Kokkos::pair<T_INT,T_INT>(0,total_num_neighs)),
         Kokkos::View<T_INT*, MemorySpace>( neigh_offsets, Kokkos::pair<T_INT,T_INT>(0,N_local+1)));
 
   }

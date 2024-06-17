@@ -36,6 +36,8 @@
 //  Questions? Contact Christian R. Trott (crtrott@sandia.gov)
 //************************************************************************
 
+#include <string>
+
 #if defined(EXAMINIMD_ENABLE_MPI) || defined (EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
 #include<comm_mpi.h>
 
@@ -197,14 +199,12 @@ void CommMPI::exchange() {
   s = *system;
   N_local = system->N_local;
   N_ghost = 0;
-  //printf("System A: %i %lf %lf %lf %i\n",s.N_local,s.x(21,0),s.x(21,1),s.x(21,2),s.type(21));
   Kokkos::parallel_for("CommMPI::exchange_self",
             Kokkos::RangePolicy<TagExchangeSelf, Kokkos::IndexType<T_INT> >(0,N_local), *this);
 
   T_INT N_total_recv = 0;
   T_INT N_total_send = 0;
 
-  //printf("System B: %i %lf %lf %lf %i\n",s.N_local,s.x(21,0),s.x(21,1),s.x(21,2),s.type(21));
   for(phase = 0; phase < 6; phase ++) {
     proc_num_send[phase] = 0;
     proc_num_recv[phase] = 0;
@@ -390,7 +390,8 @@ void CommMPI::exchange_halo() {
 };
 
 void CommMPI::update_halo() {
-#ifndef SHMEMTESTS_USE_HALO
+
+#if !defined(SHMEMTESTS_USE_HALO) && defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
   return;
 #else
   Kokkos::Profiling::pushRegion("Comm::update_halo");
@@ -478,7 +479,13 @@ void CommMPI::update_force() {
   Kokkos::Profiling::popRegion();
 };
 
-const char* CommMPI::name() { return "CommMPI"; }
+const char* CommMPI::name() {
+    comm_name = std::string("CommMPI");
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+    comm_name += "Distrib";
+    #endif
+    return comm_name.c_str();
+}
 
 int CommMPI::process_rank() { return proc_rank; }
 int CommMPI::num_processes() { return proc_size; }

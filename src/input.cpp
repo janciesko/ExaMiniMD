@@ -373,8 +373,7 @@ void Input::check_lammps_command(int line) {
       force_type = FORCE_LJ;
       force_cutoff = atof(input_data.words[line][2]);
       force_line = line;
-    }
-    if(strcmp(input_data.words[line][1],"snap")==0) {
+    }else if(strcmp(input_data.words[line][1],"snap")==0) {
       known = true;
       force_type = FORCE_SNAP;
       force_cutoff = 4.73442;// atof(input_data.words[line][2]);
@@ -505,6 +504,7 @@ void Input::create_lattice(Comm* comm) {
         }
       }
     }
+
     system->N_local = n;
     system->N = n;
     int global_n_max = n;
@@ -522,39 +522,7 @@ void Input::create_lattice(Comm* comm) {
     // zero out momentum of the whole system afterwards, to eliminate
     // drift (bad for energy statistics)
 
-    for(T_INT iz=iz_start; iz<=iz_end; iz++) {
-      T_FLOAT ztmp = lattice_constant * (iz+lattice_offset_z);
-      for(T_INT iy=iy_start; iy<=iy_end; iy++) {
-        T_FLOAT ytmp = lattice_constant * (iy+lattice_offset_y);
-        for(T_INT ix=ix_start; ix<=ix_end; ix++) {
-          T_FLOAT xtmp = lattice_constant * (ix+lattice_offset_x);
-          if((xtmp >= s.sub_domain_lo_x) &&
-             (ytmp >= s.sub_domain_lo_y) &&
-             (ztmp >= s.sub_domain_lo_z) &&
-             (xtmp <  s.sub_domain_hi_x) &&
-             (ytmp <  s.sub_domain_hi_y) &&
-             (ztmp <  s.sub_domain_hi_z) ) {
-            n++;
-          }
-        }
-      }
-    }
-    global_n_max = n;
-    comm->reduce_max_int(&global_n_max,1); 
-    system->grow(global_n_max);
-    System s = *system;
-    h_x = Kokkos::create_mirror_view(s.x);
-    h_v = Kokkos::create_mirror_view(s.v);
-    h_q = Kokkos::create_mirror_view(s.q);
-    h_type = Kokkos::create_mirror_view(s.type);
-    h_id = Kokkos::create_mirror_view(s.id);
-
     n = 0;
-
-    // Initialize system using the equivalent of the LAMMPS
-    // velocity geom option, i.e. uniform random kinetic energies.
-    // zero out momentum of the whole system afterwards, to eliminate
-    // drift (bad for energy statistics)
 
     for(T_INT iz=iz_start; iz<=iz_end; iz++) {
       T_FLOAT ztmp = lattice_constant * (iz+lattice_offset_z);
@@ -658,41 +626,7 @@ void Input::create_lattice(Comm* comm) {
     // zero out momentum of the whole system afterwards, to eliminate
     // drift (bad for energy statistics)
 
-    for(T_INT iz=iz_start; iz<=iz_end; iz++) {
-      for(T_INT iy=iy_start; iy<=iy_end; iy++) {
-        for(T_INT ix=ix_start; ix<=ix_end; ix++) {
-          for(int k = 0; k<4; k++) {
-            T_FLOAT xtmp = lattice_constant * (1.0*ix+basis[k][0]);
-            T_FLOAT ytmp = lattice_constant * (1.0*iy+basis[k][1]);
-            T_FLOAT ztmp = lattice_constant * (1.0*iz+basis[k][2]);
-            if((xtmp >= s.sub_domain_lo_x) &&
-               (ytmp >= s.sub_domain_lo_y) &&
-               (ztmp >= s.sub_domain_lo_z) &&
-               (xtmp <  s.sub_domain_hi_x) &&
-               (ytmp <  s.sub_domain_hi_y) &&
-               (ztmp <  s.sub_domain_hi_z) ) {
-              n++;
-            }
-          }
-        }
-      }
-    }
-    global_n_max = n;
-    comm->reduce_max_int(&global_n_max,1); 
-    system->grow(global_n_max);
-    System s = *system;
-    h_x = Kokkos::create_mirror_view(s.x);
-    h_v = Kokkos::create_mirror_view(s.v);
-    h_q = Kokkos::create_mirror_view(s.q);
-    h_type = Kokkos::create_mirror_view(s.type);
-    h_id = Kokkos::create_mirror_view(s.id);
-
     n = 0;
-
-    // Initialize system using the equivalent of the LAMMPS
-    // velocity geom option, i.e. uniform random kinetic energies.
-    // zero out momentum of the whole system afterwards, to eliminate
-    // drift (bad for energy statistics)
 
     for(T_INT iz=iz_start; iz<=iz_end; iz++) {
       for(T_INT iy=iy_start; iy<=iy_end; iy++) {
@@ -730,12 +664,8 @@ void Input::create_lattice(Comm* comm) {
     if(system->do_print)
       printf("Atoms: %i %i\n",system->N,system->N_local);
   }
-  // Initialize velocity using the equivalent of the LAMMPS
-  // velocity geom option, i.e. uniform random kinetic energies.
-  // zero out momentum of the whole system afterwards, to eliminate
-  // drift (bad for energy statistics)
 
-  {  // Scope s
+  { //Scope
     System s = *system;
     T_FLOAT total_mass = 0.0;
     T_FLOAT total_momentum_x = 0.0;

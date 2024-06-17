@@ -70,7 +70,6 @@ class CommMPI: public Comm {
   System s;
 
   // Owned Variables
-
   int phase; // Communication Phase
   int proc_neighbors_recv[6]; // Neighbor for each phase
   int proc_neighbors_send[6]; // Neighbor for each phase
@@ -80,6 +79,8 @@ class CommMPI: public Comm {
   int proc_grid[3];      // Process Grid size
   int proc_rank;         // My Process rank
   int proc_size;         // Number of processes
+
+  std::string comm_name;
 
   T_INT num_ghost[6];
   T_INT ghost_offsets[6];
@@ -503,7 +504,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator() (const TagCreateGlobalIndecies,
                    const T_INT& i) const {
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     s.global_index(i) = N_MAX_MASK * proc_rank + i; 
+    #endif
   }
 
   const char* name();

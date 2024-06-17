@@ -67,18 +67,19 @@ public:
 
   // Per Particle Property
   t_x x;         // Positions
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+  t_x_shmem x_shmem; // Positions
+  #endif
   t_v v;         // Velocities
   t_f f;         // Forces
 
   t_type  type;   // Particle Type
   t_id    id;     // Particle ID
-  t_index global_index; // Index for PGAS indexing  
+  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
+  t_index global_index; // Index for distibuted view indexing  
+  #endif
   
   t_q q;         // Charge
-
-  #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
-  t_x_shmem x_shmem; 
-  #endif
 
   // Per Type Property
   t_mass mass;
@@ -114,7 +115,9 @@ public:
     p.q = q(i);
     p.id = id(i);
     p.type = type(i);
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     p.global_index = global_index(i);
+    #endif
     return p;
   }
 
@@ -125,7 +128,9 @@ public:
     q(i) = p.q;
     id(i) = p.id;
     type(i) = p.type;
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     global_index(i) = p.global_index;
+    #endif
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -139,7 +144,9 @@ public:
     type(dest) = type(src);
     id(dest) = id(src);
     q(dest) = q(src);
+    #ifdef EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES
     global_index(dest) = global_index(src);
+    #endif
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -150,5 +157,6 @@ public:
   }
 
   void print_particles();
+  void print_particles_from_device_data();
 };
 #endif

@@ -59,7 +59,6 @@ int main(int argc, char* argv[]) {
    ExaMiniMD examinimd;
    examinimd.init(argc,argv);
    examinimd.run(examinimd.input->nsteps);
-   // examinimd.check_correctness();
    examinimd.print_performance();
    examinimd.shutdown();
 

@@ -38,7 +38,7 @@
 
 #include <neighbor_csr_map_constr.h>
 
-#ifdef EMD_ENABLE_GPU
+#ifdef EXAMINIMD_HAS_GPU
 template struct NeighborCSRMapConstr<t_neigh_mem_space>;
 #endif
 template struct NeighborCSRMapConstr<Kokkos::HostSpace>;

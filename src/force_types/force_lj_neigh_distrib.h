@@ -54,7 +54,6 @@
     }
 #endif
 
-
 #if !defined(MODULES_OPTION_CHECK) && \
     !defined(FORCE_MODULES_INSTANTIATION)
 
@@ -67,15 +66,23 @@ class ForceLJNeigh: public Force {
 private:
   int N_local,ntypes;
   t_x_const_rnd x;
+  t_x_shmem x_shmem;
+  t_x_shmem_local x_shmem_local;
+  t_index global_index;
   t_f f;
   t_f_atomic f_a;
   t_id id;
   t_type_const_rnd type;
+
+  T_X_FLOAT domain_x, domain_y, domain_z;
+  int proc_rank;
+
   Binning::t_bincount bin_count;
   Binning::t_binoffsets bin_offsets;
   T_INT nbinx,nbiny,nbinz,nhalo;
   int step;
   bool use_stackparams;
+
 
   typedef Kokkos::View<T_F_FLOAT**> t_fparams;
   typedef Kokkos::View<const T_F_FLOAT**,
@@ -105,6 +112,8 @@ public:
   template<bool STACKPARAMS>
   struct TagHalfNeighPE {};
 
+  struct TagCopyLocalXShmem {};
+
   typedef Kokkos::RangePolicy<TagFullNeigh<false>,Kokkos::IndexType<T_INT> > t_policy_full_neigh;
   typedef Kokkos::RangePolicy<TagHalfNeigh<false>,Kokkos::IndexType<T_INT> > t_policy_half_neigh;
   typedef Kokkos::RangePolicy<TagFullNeighPE<false>,Kokkos::IndexType<T_INT> > t_policy_full_neigh_pe;
@@ -114,6 +123,8 @@ public:
   typedef Kokkos::RangePolicy<TagHalfNeigh<true>,Kokkos::IndexType<T_INT> > t_policy_half_neigh_stackparams;
   typedef Kokkos::RangePolicy<TagFullNeighPE<true>,Kokkos::IndexType<T_INT> > t_policy_full_neigh_pe_stackparams;
   typedef Kokkos::RangePolicy<TagHalfNeighPE<true>,Kokkos::IndexType<T_INT> > t_policy_half_neigh_pe_stackparams;
+
+  typedef Kokkos::RangePolicy<TagCopyLocalXShmem,Kokkos::IndexType<T_INT> > t_policy_compute_fill_xshmem;
 
   ForceLJNeigh (char** args, System* system, bool half_neigh_);
 
@@ -137,6 +148,9 @@ public:
   template<bool STACKPARAMS>
   KOKKOS_INLINE_FUNCTION
   void operator() (TagHalfNeighPE<STACKPARAMS>, const T_INT& i, T_V_FLOAT& PE) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCopyLocalXShmem, const T_INT& i) const;
 
   const char* name();
 };
