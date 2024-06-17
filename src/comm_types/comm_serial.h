@@ -39,6 +39,12 @@
 #ifdef MODULES_OPTION_CHECK
       if( (strcmp(argv[i+1], "SERIAL") == 0) )
         comm_type = COMM_SERIAL;
+      #if !defined(EXAMINIMD_ENABLE_MPI) && !defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES) 
+      if( (strcmp(argv[i+1], "SERIAL") != 0) ){
+        printf("ERROR: Unsupported Comm-type selected\n");
+        exit(1);
+      }
+      #endif
 #endif
 #ifdef COMM_MODULES_INSTANTIATION
       else if(input->comm_type == COMM_SERIAL) {

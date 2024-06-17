@@ -123,7 +123,6 @@ Input::Input(System* p):system(p),input_data(ItemizedFile()),integrator_type(INT
   force_coeff_lines = Kokkos::View<int*,Kokkos::HostSpace>("Input::force_coeff_lines",0);
   input_file_type = -1;
 
-
 #if defined(EXAMINIMD_ENABLE_MPI) && defined(EXAMINIMD_ENABLE_KOKKOS_REMOTE_SPACES)
   comm_type = COMM_MPI;
 #else
